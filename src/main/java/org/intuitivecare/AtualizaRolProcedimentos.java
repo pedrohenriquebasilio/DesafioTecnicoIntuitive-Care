@@ -42,7 +42,24 @@ public class AtualizaRolProcedimentos {
             WebElement btnCookie = driver.findElement(By.cssSelector(".btn-accept"));
             btnCookie.click();
         }
+        if(foiEncontradoElemento(driver,By.cssSelector("a[data-mce-href='resolveuid/f710899c6c7a485ea62a1acc75d86c8c']"))){
+            WebElement anexoI = driver.findElement(By.cssSelector("a[data-mce-href='resolveuid/f710899c6c7a485ea62a1acc75d86c8c']"));
+            String urlAnexoI = anexoI.getAttribute("href");
+            System.out.println("A URL extraida é:"+ urlAnexoI);
+            anexoI.click();
+        if(!urlAnexoI.equals(driver.getCurrentUrl())){
+            driver.get(urlAnexoI);
+        }
 
+        if(foiEncontradoElemento(driver, By.xpath("//*[@id=\"download\"]"))){
+            System.out.println("achei");
+        } else {
+            System.out.println(" n achei");
+        }
+
+
+
+        }
 
     }
 
