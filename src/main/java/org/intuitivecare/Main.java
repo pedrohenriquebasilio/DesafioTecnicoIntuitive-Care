@@ -5,7 +5,7 @@ public class Main {
         AtualizaRolProcedimentos robo = new AtualizaRolProcedimentos();
 
         if(robo.configuraRobo()){
-            robo.EntraNoSite();
+            robo.entraNoSite();
         }
     }
 }

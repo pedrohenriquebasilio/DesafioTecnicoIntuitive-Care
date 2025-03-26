@@ -1,81 +1,125 @@
 package org.intuitivecare;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class AtualizaRolProcedimentos {
 
     private WebDriver driver;
-    public boolean configuraRobo() {
-        boolean config = false;
-        try {
+    private final String downloadPath = System.getProperty("user.dir") + "\\src\\main\\resources\\anexos";
 
-            String downloadFilepath = System.getProperty("user.dir") + "\\src\\main\\resources\\anexos";
+    public boolean configuraRobo() {
+        try {
             String chromeDriverPath = System.getProperty("user.dir") + "\\src\\main\\resources\\chromedriver.exe";
             System.setProperty("webdriver.chrome.driver", chromeDriverPath);
 
-
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--start-maximized");
-            options.addArguments("--disable-extensions");
-            options.addArguments("--disable-notifications");
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--disable-dev-shm-usage");
-
+            options.addArguments("--start-maximized", "--disable-extensions", "--disable-notifications",
+                    "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage");
 
             Map<String, Object> prefs = new HashMap<>();
-            prefs.put("download.default_directory", downloadFilepath);
+            prefs.put("download.default_directory", downloadPath);
             prefs.put("download.prompt_for_download", false);
             prefs.put("plugins.always_open_pdf_externally", true);
-
-            // Adiciona as preferências ao ChromeOptions
             options.setExperimentalOption("prefs", prefs);
 
             driver = new ChromeDriver(options);
-            driver.manage().timeouts().pageLoadTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
+            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
 
-            config = true;
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-        return config;
     }
 
-
-    public  void EntraNoSite(){
+    public void entraNoSite() {
         driver.get("https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-da-sociedade/atualizacao-do-rol-de-procedimentos");
-        if(foiEncontradoElemento(driver,By.cssSelector(".btn-accept"))){
-            WebElement btnCookie = driver.findElement(By.cssSelector(".btn-accept"));
-            btnCookie.click();
+
+        // Aceitar cookies se o botão existir
+        clicarSePresente(By.cssSelector(".btn-accept"));
+
+        // Baixar os arquivos
+        boolean foiBaixado1 = baixarArquivo("f710899c6c7a485ea62a1acc75d86c8c");
+        boolean foiBaixado2 = baixarArquivo("aee04d07eec1412e8121f50c277d72b9");
+
+        if (foiBaixado1 && foiBaixado2) {
+            System.out.println("Anexos baixados corretamente.");
+            System.out.println("Iniciando compressão em ZIP...");
+            comprimirArquivosEmZip();
+        } else {
+            System.out.println("Erro ao baixar os anexos.");
         }
-        if(foiEncontradoElemento(driver,By.cssSelector("a[data-mce-href='resolveuid/f710899c6c7a485ea62a1acc75d86c8c']"))){
-            WebElement anexoI = driver.findElement(By.cssSelector("a[data-mce-href='resolveuid/f710899c6c7a485ea62a1acc75d86c8c']"));
-            String urlAnexoI = anexoI.getAttribute("href");
-            System.out.println("A URL extraida é:"+ urlAnexoI);
-            anexoI.click();
-        }
-        //if(foiEncontradoElemento(driver,By.cssSelector()))
     }
 
+    private boolean baixarArquivo(String fileUid) {
+        Optional<WebElement> anexo = encontrarElemento(By.cssSelector("a[data-mce-href='resolveuid/" + fileUid + "']"));
+        anexo.ifPresent(WebElement::click);
+        return anexo.isPresent();
+    }
 
-    public static boolean foiEncontradoElemento(WebDriver driver, By by) {
+    private void clicarSePresente(By by) {
+        encontrarElemento(by).ifPresent(WebElement::click);
+    }
+
+    private Optional<WebElement> encontrarElemento(By by) {
         try {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            wait.until(ExpectedConditions.presenceOfElementLocated(by));
-            return true;
+            return Optional.ofNullable(wait.until(ExpectedConditions.presenceOfElementLocated(by)));
         } catch (TimeoutException e) {
-            return false;
+            return Optional.empty();
+        }
+    }
+
+    public void comprimirArquivosEmZip() {
+        String zipFilePath = downloadPath + "\\anexos_comprimidos.zip";
+
+        try (FileOutputStream fos = new FileOutputStream(zipFilePath);
+             ZipOutputStream zipOut = new ZipOutputStream(fos)) {
+
+            File folder = new File(downloadPath);
+            File[] files = folder.listFiles();
+
+            if (files == null || files.length == 0) {
+                System.out.println("Nenhum arquivo encontrado para compactação.");
+                return;
+            }
+
+            for (File file : files) {
+                if (file.isFile()) {
+                    try (FileInputStream fis = new FileInputStream(file)) {
+                        ZipEntry zipEntry = new ZipEntry(file.getName());
+                        zipOut.putNextEntry(zipEntry);
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = fis.read(buffer)) != -1) {
+                            zipOut.write(buffer, 0, bytesRead);
+                        }
+                        zipOut.closeEntry();
+                        System.out.println("Arquivo adicionado ao ZIP: " + file.getName());
+                    }
+                }
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
