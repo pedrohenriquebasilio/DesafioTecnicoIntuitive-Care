@@ -5,6 +5,7 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -18,7 +19,15 @@ public class AtualizaRolProcedimentos {
         try {
             String chromeDriverPath = System.getProperty("user.dir") + "\\src\\main\\resources\\chromedriver.exe";
             System.setProperty("webdriver.chrome.driver", chromeDriverPath);
-            driver = new ChromeDriver();
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--start-maximized");
+            options.addArguments("--disable-extensions");
+            options.addArguments("--disable-notifications");
+            options.addArguments("--no-sandbox");
+            options.addArguments("--disable-gpu");
+            options.addArguments("--disable-dev-shm-usage");
+            driver = new ChromeDriver(options);
+            driver.manage().timeouts().pageLoadTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
 
             config = true;
         } catch (Exception e) {
@@ -29,11 +38,12 @@ public class AtualizaRolProcedimentos {
 
     public  void EntraNoSite(){
         driver.get("https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-da-sociedade/atualizacao-do-rol-de-procedimentos");
-        if(foiEncontradoElemento(driver,By.xpath("/html/body/div[5]/div/div/div/div/div[2]/button[3]"))){
-            System.out.println("achei");
-        } else {
-            System.out.println("não achei");
+        if(foiEncontradoElemento(driver,By.cssSelector(".btn-accept"))){
+            WebElement btnCookie = driver.findElement(By.cssSelector(".btn-accept"));
+            btnCookie.click();
         }
+
+
     }
 
 
