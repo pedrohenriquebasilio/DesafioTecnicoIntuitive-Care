@@ -10,6 +10,8 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AtualizaRolProcedimentos {
 
@@ -17,8 +19,12 @@ public class AtualizaRolProcedimentos {
     public boolean configuraRobo() {
         boolean config = false;
         try {
+
+            String downloadFilepath = System.getProperty("user.dir") + "\\src\\main\\resources\\anexos";
             String chromeDriverPath = System.getProperty("user.dir") + "\\src\\main\\resources\\chromedriver.exe";
             System.setProperty("webdriver.chrome.driver", chromeDriverPath);
+
+
             ChromeOptions options = new ChromeOptions();
             options.addArguments("--start-maximized");
             options.addArguments("--disable-extensions");
@@ -26,6 +32,16 @@ public class AtualizaRolProcedimentos {
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-gpu");
             options.addArguments("--disable-dev-shm-usage");
+
+
+            Map<String, Object> prefs = new HashMap<>();
+            prefs.put("download.default_directory", downloadFilepath);
+            prefs.put("download.prompt_for_download", false);
+            prefs.put("plugins.always_open_pdf_externally", true);
+
+            // Adiciona as preferências ao ChromeOptions
+            options.setExperimentalOption("prefs", prefs);
+
             driver = new ChromeDriver(options);
             driver.manage().timeouts().pageLoadTimeout(30, java.util.concurrent.TimeUnit.SECONDS);
 
@@ -35,6 +51,7 @@ public class AtualizaRolProcedimentos {
         }
         return config;
     }
+
 
     public  void EntraNoSite(){
         driver.get("https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-da-sociedade/atualizacao-do-rol-de-procedimentos");
@@ -47,20 +64,8 @@ public class AtualizaRolProcedimentos {
             String urlAnexoI = anexoI.getAttribute("href");
             System.out.println("A URL extraida é:"+ urlAnexoI);
             anexoI.click();
-        if(!urlAnexoI.equals(driver.getCurrentUrl())){
-            driver.get(urlAnexoI);
         }
-
-        if(foiEncontradoElemento(driver, By.xpath("//*[@id=\"download\"]"))){
-            System.out.println("achei");
-        } else {
-            System.out.println(" n achei");
-        }
-
-
-
-        }
-
+        //if(foiEncontradoElemento(driver,By.cssSelector()))
     }
 
 
